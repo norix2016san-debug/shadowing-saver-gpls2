@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shadowing Saver - GPLS Book 2</title>
+  <style>
+    :root {
+      --primary: #1a73e8;
+      --primary-dark: #1557b0;
+      --success: #1e8e3e;
+      --warning: #f9ab00;
+      --danger: #d93025;
+      --bg: #f8f9fa;
+      --card: #ffffff;
+      --border: #dadce0;
+      --text: #202124;
+      --text-sub: #5f6368;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 20px 16px;
+    }
+
+    .container {
+      max-width: 820px;
+      margin: 0 auto;
+      background: var(--card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 28px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    }
+
+    .system-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    .system-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .system-subtitle {
+      font-size: 13px;
+      color: var(--text-sub);
+      font-weight: 500;
+    }
+    .student-id-box {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+    .student-id-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+    .student-id-input {
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      width: 140px;
+      text-transform: uppercase;
+    }
+    .student-id-input.valid {
+      border-color: var(--success);
+      background-color: #f6fbf7;
+    }
+    .student-id-input.invalid {
+      border-color: var(--danger);
+      background-color: #fdf7f7;
+    }
+    .id-auth-msg {
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .overall-progress-wrapper {
+      margin-bottom: 20px;
+    }
+    .overall-progress-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-sub);
+      margin-bottom: 6px;
+    }
+    .overall-progress-bar {
+      height: 8px;
+      background-color: #e8eaed;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .overall-progress-fill {
+      height: 100%;
+      background-color: var(--primary);
+      width: 6%;
+      transition: width 0.3s ease;
+    }
+
+    .earphone-alert {
+      background-color: #fef7e0;
+      border-left: 4px solid var(--warning);
+      border-radius: 4px;
+      padding: 10px 14px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #935600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .task-card {
+      background: #fafbfc;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .task-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .task-title {
+      font-size: 20px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 12px;
+    }
+    .badge-no-retry { background: #fce8e6; color: var(--danger); }
+    .badge-can-retry { background: #e6f4ea; color: var(--success); }
+
+    .task-desc {
+      font-size: 14px;
+      color: var(--text-sub);
+      margin-bottom: 16px;
+    }
+    .audio-source-info {
+      font-size: 12px;
+      color: var(--text-sub);
+      font-family: monospace;
+      background: #eef2f6;
+      padding: 2px 8px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    .script-box {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 18px;
+      margin-bottom: 20px;
+      min-height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    .script-text {
+      font-size: 18px;
+      font-weight: 500;
+      line-height: 1.6;
+    }
+    .script-hidden {
+      color: var(--text-sub);
+      font-style: italic;
+      font-size: 15px;
+    }
+
+    .indicator-wrapper {
+      margin-bottom: 20px;
+      padding: 14px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .indicator-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-sub);
+      margin-bottom: 6px;
+    }
+    .indicator-track {
+      width: 100%;
+      height: 12px;
+      background-color: #e0e0e0;
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+    .indicator-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #4285f4, #34a853);
+      transition: width 0.1s linear;
+    }
+
+    .action-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .btn-record {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 14px 32px;
+      font-size: 16px;
+      font-weight: 700;
+      border-radius: 30px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 6px rgba(26,115,232,0.3);
+    }
+    .btn-record:hover { background: var(--primary-dark); }
+    .btn-record:disabled { background: #bcc1c6; cursor: not-allowed; box-shadow: none; }
+    .btn-record.recording {
+      background: var(--danger);
+      animation: pulse 1.5s infinite;
+      box-shadow: 0 2px 6px rgba(217,48,37,0.4);
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(217, 48, 37, 0.5); }
+      70% { box-shadow: 0 0 0 12px rgba(217, 48, 37, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(217, 48, 37, 0); }
+    }
+
+    .feedback-panel {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 18px;
+      background: #ffffff;
+      margin-bottom: 20px;
+      display: none;
+    }
+    .score-banner {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 12px;
+    }
+    .file-save-badge {
+      font-size: 12px;
+      background: #f1f3f4;
+      padding: 6px 10px;
+      border-radius: 4px;
+      word-break: break-all;
+      margin-top: 10px;
+      color: #3c4043;
+    }
+
+    .nav-container {
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+    .nav-buttons {
+      display: flex;
+      gap: 12px;
+    }
+    .sync-status {
+      font-size: 13px;
+      font-weight: 600;
+      min-height: 22px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .sync-uploading { color: var(--primary); }
+    .sync-success { color: var(--success); }
+    .sync-error { color: var(--danger); }
+
+    .btn {
+      padding: 10px 22px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: #fff;
+    }
+    .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .completion-card {
+      text-align: center;
+      padding: 40px 10px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="system-header">
+    <div>
+      <div class="system-title">Shadowing Saver</div>
+      <div class="system-subtitle" id="assignmentSubtitle">GPLS Book 2 / 課題: 読み込み中...</div>
+    </div>
+    <div class="student-id-box">
+      <div class="student-id-row">
+        <label for="studentId">学籍番号:</label>
+        <input type="text" id="studentId" class="student-id-input" placeholder="例: 01X26000" value="">
+      </div>
+      <div id="idAuthMsg" class="id-auth-msg"></div>
+    </div>
+  </div>
+
+  <div class="overall-progress-wrapper" id="overallProgressWrapper">
+    <div class="overall-progress-header">
+      <span id="overallTaskLabel">タスク 1 / 17</span>
+      <span id="overallPercentage">6%</span>
+    </div>
+    <div class="overall-progress-bar">
+      <div id="overallProgressFill" class="overall-progress-fill"></div>
+    </div>
+  </div>
+
+  <div class="earphone-alert">
+    <span>🎧</span>
+    <div><strong>必ずイヤホンを装着してください</strong>（スピーカー音をマイクが拾うと誤認識の原因になります）</div>
+  </div>
+
+  <div id="taskArea">
+    <div class="task-card">
+      <div class="task-header-row">
+        <h2 class="task-title" id="taskTitle">タスク名</h2>
+        <span id="retryBadge" class="badge">やり直し不可</span>
+      </div>
+      <p class="task-desc" id="taskDesc">タスクの説明文</p>
+      <div><span class="audio-source-info" id="audioSourceLabel">使用音声: -</span></div>
+    </div>
+
+    <div class="script-box">
+      <div id="scriptContent" class="script-text">読み込み中...</div>
+    </div>
+
+    <div class="indicator-wrapper">
+      <div class="indicator-header">
+        <span>再生・発話ガイド</span>
+        <span id="indicatorTime">00:00 / 00:00</span>
+      </div>
+      <div class="indicator-track">
+        <div id="indicatorFill" class="indicator-fill"></div>
+      </div>
+      <audio id="modelAudio" preload="auto" style="display: none;"></audio>
+    </div>
+
+    <div class="action-panel">
+      <button id="recordBtn" class="btn-record">
+        <span id="recordIcon">●</span>
+        <span id="recordBtnText">録音を開始する</span>
+      </button>
+      <div id="statusMessage" style="font-size: 13px; color: var(--text-sub); min-height: 20px;"></div>
+    </div>
+
+    <div class="feedback-panel" id="feedbackPanel">
+      <div class="score-banner" id="scoreDisplay">認識率（単語カバー率）: 0%</div>
+      
+      <p style="font-size: 13px; color: var(--text-sub); margin-bottom: 4px;">【Check your voice】あなたの録音音声：</p>
+      <audio id="userAudioPreview" controls style="width: 100%; margin-bottom: 12px;"></audio>
+
+      <div style="font-size: 13px; margin-bottom: 6px;">
+        <strong>認識された発話テキスト:</strong>
+        <div id="recognizedTextDisplay" style="color: var(--primary); font-weight: 500; margin-top: 2px;">-</div>
+      </div>
+
+      <div class="file-save-badge">
+        <strong>保存ファイル名（自動生成）:</strong><br>
+        <span id="generatedFilename">-</span>
+      </div>
+    </div>
+
+    <div class="nav-container">
+      <div id="syncStatus" class="sync-status"></div>
+      <div class="nav-buttons">
+        <button id="retryBtn" class="btn" style="display: none;">もう一度録音する</button>
+        <button id="nextBtn" class="btn btn-primary" disabled>提出して次へ ➔</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="completionCard" class="completion-card">
+    <h2 style="color: var(--success); font-size: 26px; margin-bottom: 14px;">すべての課題が完了しました！</h2>
+    <p style="color: var(--text-sub); font-size: 15px; margin-bottom: 20px;">
+      17タスクの音声と認識率の記録が正常に完了しました。<br>お疲れ様でした。ブラウザを閉じて終了してください。
+    </p>
+  </div>
+</div>
+
+<script>
+/**
+ * 0. 登録受講生（84名）の学籍番号マスターリスト（一括適用済み）
+ */
+const ALLOWED_STUDENT_IDS = [
+  "06A26020", "07A26013", "07A26050", "07A26059", "07A26072", "07A26074", "08A26016", "08A26024",
+  "08A26039", "08A26045", "08A26055", "08A26071", "08A26112", "08A26114", "08A26135", "08A26147",
+  "08A26149", "08A26150", "08A26156", "08A26171", "08A26176", "08A26201", "08C26003", "08C26005",
+  "08C26012", "08C26017", "08C26020", "08C26028", "08C26060", "08C26090", "08C26096", "08C26099",
+  "08C26110", "08E24068", "08E26025", "08E26027", "08E26031", "08E26032", "08E26041", "08E26068",
+  "08E26072", "08E26075", "00A26028", "00A26032", "00A26039", "00A26063", "00A26067", "00A26079",
+  "00A26118", "00A26130", "00A26147", "00A26150", "00A26152", "02A26001", "02A26003", "02A26004",
+  "02A26007", "02A26015", "02A26018", "02A26026", "02A26029", "02A26039", "02A26040", "02A26064",
+  "02A26065", "02A26068", "02A26077", "02A26079", "02A26082", "02A26086", "02A26094", "02A26095",
+  "02A26098", "02A26099", "02A26110", "02A26121", "02A26136", "02B26003", "02B26070", "07A23012",
+  "09D24031", "09D26050", "09D26065", "09D26101"
+];
+
+const GAS_ENDPOINT_URL = "https://script.google.com/macros/s/AKfycbwPjHHUjxKb1s6EIR5l9zFC-p7Y0TRUhH1Y777xEcACQmHjJngUW69dm3Q2i22rL1CM/exec";
+
+/**
+ * 1. 原稿テキスト辞書（原稿修正済み完全準拠）
+ */
+const MIC_CHECK_SCRIPT = "この音声を聞きながら画面の文字を読んで、録音してください。音声認識の結果は表示されていますか？自分の声はクリアに聞こえますか？イヤホンとマイクの設定を調整してください。";
+
+const assignmentsDatabase = {
+  "1-2": {
+    title: "Unit 1&2",
+    scripts: {
+      uA_1: "Books can be an important source for conducting academic research. I will describe an advantage and a disadvantage of this kind of source. One of the advantages of books is reliability. For example, books in the school library come from sources that we can trust. Authors write down what they want to say and editors check their ideas carefully. If there are mistakes in the book, the authors have to revise their work until it meets a standard. Publishers trust the editors to deal with any problems in the books, and libraries offer books from publishing companies that can be trusted.",
+      uA_2: "On the other hand, a disadvantage of books is they can be outdated. For example, it is very difficult to update a book. It costs a lot of money to print the books and so there're many books in libraries that are quite old. Some subjects change a lot so information in older books might not be useful. Technology is one area that changes rapidly. A book about technology which is twenty years old, is not useful for understanding recent tools. In conclusion, books are a reliable source for conducting academic research. This is because there is a long chain of people who make sure that the books show accurate information. On the other hand, books are often quite old and do not contain up-to-date information.",
+      uB_1: "Today, I would like to talk about Japanese society. I will focus on hikikomori and matsuri. One of the phenomena in our society is hikikomori. In other words, many people in Japan have withdrawn from society and do not leave their house, or their parents’ house, at all, not even for shopping, school, or work. This situation can continue for several months or longer.",
+      uB_2: "Matsuri is also a typical example to describe our society. That is to say, a traditional Japanese festival. Visitors to Japan will recognize that Japan is a modern, developed country with advanced transportation systems and new buildings. However, Japan also has a long history with many traditions. A matsuri is a good opportunity to experience traditional aspects of Japan. Tourists will be able to see costumes and symbols and watch performances from Japan’s past. After all, Japanese society is a complex mix of ancient and modern. It is important to understand the problems which people in Japan face, as well as to experience fabulous displays of our culture."
+    },
+    audioPrefix: { uA: "GPLS2_U01_CD1-11", uB: "GPLS2_U02_CD1-22" },
+    uAName: "Unit 1", uBName: "Unit 2",
+    mcFilename: "学籍番号_U1-2_MicCheck_J_MC_提出日時.mp3"
+  },
+  "3-4": {
+    title: "Unit 3&4",
+    scripts: {
+      uA_1: "Imagine that your smartphone, money or keys were stolen. In such a situation, one of the things you need to avoid is letting another person spend money on your credit card. Credit card thieves act quickly to spend as much money as they can before the theft is discovered. Thieves know how to use stolen cards to make large amounts of money. Therefore, it is important to call the police and your bank as soon as you discover the theft.",
+      uA_2: "Otherwise, you would end up with huge debts. There would also be a problem with thieves accessing personal information from your personal identity cards and smartphone. In conclusion, to prepare for an emergency, you need to know the telephone number for your bank and understand that you must call this number quickly if your wallet is stolen.",
+      uB_1: "In this presentation, I will talk about how gender awareness has changed over time in Ireland. In the old days, homosexual activities were prohibited by law. For example, homosexual acts were punished with imprisonment, in the same way that sexual acts with animals were punished. These laws remained until 1993. Nowadays, same-sex marriage is permitted in Ireland. This followed a vote in 2015, when 62% of the population voted in favor.",
+      uB_2: "In addition, Ireland became the first country in the world to have an openly LGBT leader in 2017, when Leo Varadkar was elected as Prime Minister. We can say that Irish attitudes to LGBT changed very quickly in a little over twenty years. In the future, I think more countries will follow Ireland’s lead and LGBT people will find it easier to reach high positions. The history of gender awareness in Ireland tells us that change can happen quickly, because this country is now one of the most progressive in the world."
+    },
+    audioPrefix: { uA: "GPLS2_U03_CD1-33", uB: "GPLS2_U04_CD1-44" },
+    uAName: "Unit 3", uBName: "Unit 4",
+    mcFilename: "学籍番号_U3-4_MicCheck_J_MC_提出日時.mp3"
+  },
+  "5-6": {
+    title: "Unit 5&6",
+    scripts: {
+      uA_1: "I am going to introduce Hannukah and Christmas. There are similarities and differences between them. One thing that Hannukah and Christmas have in common is that they are family occasions. For example, it is common these days for families and friends to exchange gifts and cards with each other. One popular gift at both events is chocolate coins.",
+      uA_2: "On the other hand, they are different in the symbols that they use. For example, Hannukah is known as the festival of light. The main symbol which people use is eight candles, which are lit on a candle holder known as a menorah. At Christmas, there are various symbols including a Christmas tree, Santa Claus and the traditional nativity scene with the birth of Jesus Christ. I would recommend you be aware that even though both Hannukah and Christmas are well-known winter events in Western countries, they come from different religions. It is important not to confuse these festivals so that members of each religion do not get offended.",
+      uB_1: "The companies I did research on are Ikea and Volkswagen. You often hear the names of these companies, but did you know how they do business? First, Ikea is a multinational corporation. They first started as a mail-order sales business in Sweden in 1943. Now, they mainly do business in the area of furniture design and sales. They are known for their cheap, stylish furniture which customers assemble by themselves at home.",
+      uB_2: "Secondly, Volkswagen is a multinational corporation. They started as a car manufacturer in Nazi Germany in 1937. These days, they are one of the ten largest companies in the world and manufacture various kinds of vehicles. In sum, there are different types of businesses in the world. I found it interesting that Volkswagen was established by the Nazi government under Adolf Hitler and has continued to be successful at making cars since then."
+    },
+    audioPrefix: { uA: "GPLS2_U05_CD1-55", uB: "GPLS2_U06_CD1-66" },
+    uAName: "Unit 5", uBName: "Unit 6",
+    mcFilename: "学籍番号_U5-6_MicCheck_J_MC_提出日時.mp3",
+    audioExtSuffix: { uB_noise: "_WE.mp3", uB_clean: ".mp3" }
+  },
+  "7-8": {
+    title: "Unit 7&8",
+    scripts: {
+      uA_1: "I want to have my own successful translation company in 20 years from now. Today, I will talk about what I need to do to achieve that goal. First, while in college, I have to improve my ability in English because in Japan, English translation is in demand. Next, for a few years after graduation, I would like to work for a translation company.",
+      uA_2: "By doing so, the next 10 years will be a chance for me to make contracts with clients and hire translators for my own company. In summary, there will be three phases in my next 20 years, which are developing my abilities at university, gaining experience with a company, and building my own company. I hope I can lead a successful translation company with a strong reputation.",
+      uB_1: "In this presentation, I will compare Australian and Japanese culture. Especially, I will focus on attitudes towards clothing. In Japan, shoes are always worn outside but removed when entering a home. For example, if you visit a Japanese friend, you have to remove your shoes in the entrance area to the home and put on a pair of slippers that the host will give you. In contrast, in Australia, they don’t have strong beliefs about removing shoes. An example is that Australians of European descent often do not expect guests to remove shoes, but Australians of non-European descent may ask visitors to take off their footwear.",
+      uB_2: "Secondly, another example of Japanese culture is that many people like to cover their skin with clothes or an umbrella in order to avoid getting burnt. On the other hand, in Australia, people prefer to wear short-sleeved clothes in order to keep cool. On sunny days, they use sunscreen to protect their skin. For instance, at the beach people just wear swimwear or a t-shirt and shorts. To summarize the results of the comparison, Australia and Japan differ in attitudes to clothing, wearing shoes in the home, and covering the body."
+    },
+    audioPrefix: { uA: "GPLS2_U07_CD2-11", uB: "GPLS2_U08_CD2-22" },
+    uAName: "Unit 7", uBName: "Unit 8",
+    mcFilename: "学籍番号_U7-8_MicCheck_J_MC_提出日時.mp3",
+    audioExtSuffix: { uA_noise: "_WE.mp3", uA_clean: ".mp3", uB_noise: "_WE.mp3", uB_clean: ".mp3" }
+  },
+  "9-10": {
+    title: "Unit 9&10",
+    scripts: {
+      uA_1: "I think “the war against terrorism” should be considered a war. I will start my presentation by quoting the definitions of “war” and “terrorism.” According to the Council of Europe, “war” is defined as an act of extreme violence with political, ideological or strategic motivation. That is to say, there are different reasons for war, but they are always violent.",
+      uA_2: "According to the United Nations General Assembly, “terrorism” is defined as criminal acts intended or calculated to provoke a state of terror in public, to a group of persons or particular persons. In other words, terrorism is a kind of crime which aims to destroy peoples’ lives. Therefore, there are many similarities between war and terrorism. It is difficult to define what “war” and “terrorism” are, so it is natural that a war on terrorism can be accepted in international law.",
+      uB_1: "In modern society, there are children with multiple ethnic backgrounds. In this presentation, I will assume that I am in that position. One of the good points about having a multi-ethnic background would be a wider viewpoint. I would take advantage of this by considering and comparing ideas from all the ethnic groups that I belong to. I think I will be able to have a greater understanding of various issues as a result.",
+      uB_2: "On the other hand, I may run into difficulties when people treat me as an outsider. I would face the problem by introducing things that I like from my ethnicity and helping people to understand that I am not threatening their ethnicity. In conclusion, a multiethnic background has some benefits when it comes to widening my point of view. I would also have the chance to introduce aspects of my ethnicity to others."
+    },
+    audioPrefix: { uA: "GPLS2_U09_CD2-33", uB: "GPLS2_U10_CD2-44" },
+    uAName: "Unit 9", uBName: "Unit 10",
+    mcFilename: "学籍番号_U9-10_MicCheck_J_MC_提出日時.mp3",
+    audioExtSuffix: { uA_noise: "_WE.mp3", uA_clean: ".mp3", uB_noise: "_WE.mp3", uB_clean: ".mp3" }
+  },
+  "11-12": {
+    title: "Unit 11&12",
+    scripts: {
+      uA_1: "It is often said that aromatherapy can prevent sickness. In this presentation, I will examine if this theory is scientific or not. First, if it is scientific, it should be based on facts. An example of the facts that this theory is based on is that aromatherapy can relieve pain in cancer patients. However, we cannot say that this theory is scientific.",
+      uA_2: "Second, the scientific fact needs to be supported with evidence. According to systematic reviews, there is no evidence that aromatherapy directly relieves the pain because the treatment might just change the mood of the patient. Therefore, aromatherapy does not directly lead to pain relief. In conclusion, I would say that aromatherapy does not directly lead to pain relief, but it may help to improve the mood of the patient and cause pain relief as a result.",
+      uB_1: "Hi, I’m Claire. Have you ever heard of the news about a make-up free beauty contest? I found it on BBC News. It happened in England in 2019. Eight women entered a contest called “Bare Face Top Model.” They all submitted photos of themselves. In the photos, they had to wear jeans and a black vest with no make-up.",
+      uB_2: "Judges chose a woman called Bhasha Mukherjee as the winner. After she won the contest to become Miss England, she started her new job as a doctor. I think it’s great that girls can have role models who do not wear make-up. I don’t really like the idea of beauty contests, but if they can change their old-fashioned ideas, they might be able to have a positive impact."
+    },
+    audioPrefix: { uA: "GPLS2_U11_CD2-55", uB: "GPLS2_U12_CD2-66" },
+    uAName: "Unit 11", uBName: "Unit 12",
+    mcFilename: "学籍番号_U11-12_MicCheck_J_MC_提出日時.mp3",
+    audioExtSuffix: { uA_noise: "_WE.mp3", uA_clean: ".mp3", uB_noise: "_WE.mp3", uB_clean: ".mp3" }
+  }
+};
+
+/**
+ * 2. URLパラメータから対象課題（?u=1-2 など）を自動読み込み
+ */
+const urlParams = new URLSearchParams(window.location.search);
+const requestedKey = urlParams.get("u") || "1-2";
+const activeAssignment = assignmentsDatabase[requestedKey] || assignmentsDatabase["1-2"];
+
+document.getElementById("assignmentSubtitle").textContent = `GPLS Book 2 / 課題: ${activeAssignment.title}`;
+
+function getAudioFilename(prefix, partNum, isNoise, suffixMap, unitKey) {
+  if (suffixMap) {
+    const key = `${unitKey}_${isNoise ? 'noise' : 'clean'}`;
+    if (suffixMap[key]) {
+      return `${prefix}_${partNum}${suffixMap[key]}`;
+    }
+  }
+  return `${prefix}_${partNum}${isNoise ? '_noise.mp3' : '.mp3'}`;
+}
+
+function generateTaskList(cfg) {
+  const tasks = [];
+  tasks.push({
+    order: 1,
+    name: "Mic Check",
+    taskType: "MC",
+    lang: "ja-JP",
+    audio: "MicCheck_J.mp3",
+    text: MIC_CHECK_SCRIPT,
+    showScript: true,
+    hasAudio: true,
+    allowRetry: true,
+    desc: "音声を聞きながら、画面に表示されている日本語を読んで録音してください。（何度でも確認可能）",
+    filenameTemplate: cfg.mcFilename
+  });
+
+  const parts = [
+    { uKey: 'uA', uName: cfg.uAName, pNum: 1, scriptKey: 'uA_1', prefix: cfg.audioPrefix.uA },
+    { uKey: 'uA', uName: cfg.uAName, pNum: 2, scriptKey: 'uA_2', prefix: cfg.audioPrefix.uA },
+    { uKey: 'uB', uName: cfg.uBName, pNum: 1, scriptKey: 'uB_1', prefix: cfg.audioPrefix.uB },
+    { uKey: 'uB', uName: cfg.uBName, pNum: 2, scriptKey: 'uB_2', prefix: cfg.audioPrefix.uB }
+  ];
+
+  let orderCount = 2;
+  parts.forEach(p => {
+    const noiseAudio = getAudioFilename(p.prefix, p.pNum, true, cfg.audioExtSuffix, p.uKey);
+    const cleanAudio = getAudioFilename(p.prefix, p.pNum, false, cfg.audioExtSuffix, p.uKey);
+    const noiseBase = noiseAudio.replace(".mp3", "");
+    const cleanBase = cleanAudio.replace(".mp3", "");
+    const scriptText = cfg.scripts[p.scriptKey];
+
+    tasks.push({
+      order: orderCount++,
+      name: `${p.uName} (Part ${p.pNum}) Shadowing 1回目`,
+      taskType: "S1",
+      lang: "en-US",
+      audio: noiseAudio,
+      text: scriptText,
+      showScript: false,
+      hasAudio: true,
+      allowRetry: false,
+      desc: "【やり直し不可】文字原稿なし。流れる音声を耳で追いかけながら復唱してください。",
+      filenameTemplate: `学籍番号_${noiseBase}_S1_提出日時.mp3`
+    });
+
+    tasks.push({
+      order: orderCount++,
+      name: `${p.uName} (Part ${p.pNum}) Shadowing 2回目`,
+      taskType: "S2",
+      lang: "en-US",
+      audio: cleanAudio,
+      text: scriptText,
+      showScript: false,
+      hasAudio: true,
+      allowRetry: false,
+      desc: "【やり直し不可】文字原稿なし。クリアなモデル音声を耳で聴きながら2回目の復唱を行います。",
+      filenameTemplate: `学籍番号_${cleanBase}_S2_提出日時.mp3`
+    });
+
+    tasks.push({
+      order: orderCount++,
+      name: `${p.uName} (Part ${p.pNum}) Synchro-Reading`,
+      taskType: "SR",
+      lang: "en-US",
+      audio: cleanAudio,
+      text: scriptText,
+      showScript: true,
+      hasAudio: true,
+      allowRetry: true,
+      desc: "文字原稿を見ながら、モデル音声と全く同じタイミング・リズムで発声してください。（やり直し可能）",
+      filenameTemplate: `学籍番号_${cleanBase}_SR_提出日時.mp3`
+    });
+
+    tasks.push({
+      order: orderCount++,
+      name: `${p.uName} (Part ${p.pNum}) Reading`,
+      taskType: "RD",
+      lang: "en-US",
+      audio: cleanAudio,
+      text: scriptText,
+      showScript: true,
+      hasAudio: false,
+      allowRetry: true,
+      desc: "モデル音声はありません。文字原稿を見ながら自力で音読してください。（やり直し可能）",
+      filenameTemplate: `学籍番号_${cleanBase}_RD_提出日時.mp3`
+    });
+  });
+
+  return tasks;
+}
+
+const taskList = generateTaskList(activeAssignment);
+
+/**
+ * 3. アプリケーション制御ロジック
+ */
+let currentTaskIdx = 0;
+let mediaRecorder = null;
+let audioChunks = [];
+let recordedBlob = null;
+let recognition = null;
+let recognizedText = "";
+let interimText = "";
+let isRecording = false;
+
+let currentSubmissionPayload = null;
+let readingTimer = null;
+let readingStartTime = 0;
+let readingTargetDuration = 10;
+
+const studentIdInput = document.getElementById("studentId");
+const idAuthMsg = document.getElementById("idAuthMsg");
+const overallTaskLabel = document.getElementById("overallTaskLabel");
+const overallPercentage = document.getElementById("overallPercentage");
+const overallProgressFill = document.getElementById("overallProgressFill");
+
+const taskTitle = document.getElementById("taskTitle");
+const retryBadge = document.getElementById("retryBadge");
+const taskDesc = document.getElementById("taskDesc");
+const audioSourceLabel = document.getElementById("audioSourceLabel");
+const scriptContent = document.getElementById("scriptContent");
+
+const modelAudio = document.getElementById("modelAudio");
+const indicatorFill = document.getElementById("indicatorFill");
+const indicatorTime = document.getElementById("indicatorTime");
+
+const recordBtn = document.getElementById("recordBtn");
+const recordBtnText = document.getElementById("recordBtnText");
+const statusMessage = document.getElementById("statusMessage");
+const syncStatus = document.getElementById("syncStatus");
+
+const feedbackPanel = document.getElementById("feedbackPanel");
+const scoreDisplay = document.getElementById("scoreDisplay");
+const userAudioPreview = document.getElementById("userAudioPreview");
+const recognizedTextDisplay = document.getElementById("recognizedTextDisplay");
+const generatedFilename = document.getElementById("generatedFilename");
+
+const retryBtn = document.getElementById("retryBtn");
+const nextBtn = document.getElementById("nextBtn");
+const taskArea = document.getElementById("taskArea");
+const completionCard = document.getElementById("completionCard");
+
+// 学籍番号のリアルタイム検証（大文字小文字対応）
+function validateStudentId() {
+  const enteredId = studentIdInput.value.trim().toUpperCase();
+  if (!enteredId) {
+    studentIdInput.className = "student-id-input invalid";
+    idAuthMsg.textContent = "⚠ 学籍番号を入力してください";
+    idAuthMsg.style.color = "var(--danger)";
+    return false;
+  }
+  if (!ALLOWED_STUDENT_IDS.includes(enteredId)) {
+    studentIdInput.className = "student-id-input invalid";
+    idAuthMsg.textContent = "⚠ 登録簿にない学籍番号です";
+    idAuthMsg.style.color = "var(--danger)";
+    return false;
+  }
+  studentIdInput.className = "student-id-input valid";
+  idAuthMsg.textContent = "✔ 認証済み";
+  idAuthMsg.style.color = "var(--success)";
+  return true;
+}
+
+studentIdInput.addEventListener("input", validateStudentId);
+
+function stopAllAudios() {
+  if (modelAudio) {
+    modelAudio.pause();
+    modelAudio.currentTime = 0;
+  }
+  if (userAudioPreview) {
+    userAudioPreview.pause();
+    userAudioPreview.currentTime = 0;
+    userAudioPreview.removeAttribute("src");
+    userAudioPreview.load();
+  }
+  if (readingTimer) {
+    clearInterval(readingTimer);
+  }
+}
+
+function formatTime(seconds) {
+  if (isNaN(seconds) || seconds < 0) return "00:00";
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+function getTimestampString() {
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  const yyyy = now.getFullYear();
+  const mm = pad(now.getMonth() + 1);
+  const dd = pad(now.getDate());
+  const hh = pad(now.getHours());
+  const mi = pad(now.getMinutes());
+  const ss = pad(now.getSeconds());
+  return `${yyyy}${mm}${dd}_${hh}${mi}${ss}`;
+}
+
+function buildFilename(template) {
+  const id = studentIdInput.value.trim().toUpperCase() || "NO_ID";
+  const ts = getTimestampString();
+  return template.replace("学籍番号", id).replace("提出日時", ts);
+}
+
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64data = reader.result.split(',')[1];
+      resolve(base64data);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function sendToGoogleDrive(payload) {
+  syncStatus.className = "sync-status sync-uploading";
+  syncStatus.textContent = "⏳ Google Driveへ保存中...";
+  nextBtn.disabled = true;
+
+  try {
+    await fetch(GAS_ENDPOINT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify(payload),
+      mode: "no-cors"
+    });
+
+    syncStatus.className = "sync-status sync-success";
+    syncStatus.textContent = "✔ Google Drive / シートに保存完了";
+    nextBtn.disabled = false;
+    return true;
+  } catch (err) {
+    console.error("送信エラー:", err);
+    syncStatus.className = "sync-status sync-error";
+    syncStatus.textContent = "⚠ 保存通信エラー（再試行してください）";
+    nextBtn.disabled = false;
+    return false;
+  }
+}
+
+function calculateWordRecall(targetText, spokenText, lang) {
+  if (!targetText || !spokenText) return 0;
+
+  let targetWords = [];
+  let spokenWords = [];
+
+  if (lang === "ja-JP") {
+    if (typeof Intl !== "undefined" && Intl.Segmenter) {
+      const segmenter = new Intl.Segmenter("ja", { granularity: "word" });
+      const extract = (str) => {
+        const cleanStr = str.replace(/[、。！？\s\.,!?]/g, "");
+        const res = [];
+        for (const seg of segmenter.segment(cleanStr)) {
+          if (seg.isWordLike) res.push(seg.segment);
+        }
+        return res;
+      };
+      targetWords = extract(targetText);
+      spokenWords = extract(spokenText);
+    } else {
+      targetWords = targetText.replace(/[、。！？\s]/g, "").split("");
+      spokenWords = spokenText.replace(/[、。！？\s]/g, "").split("");
+    }
+  } else {
+    const cleanEn = (str) =>
+      str.toLowerCase()
+         .replace(/there['’]re/g, "there are")
+         .replace(/don['’]t/g, "do not")
+         .replace(/i['’]m/g, "i am")
+         .replace(/it['’]s/g, "it is")
+         .replace(/[’']/g, "")
+         .replace(/[-]/g, " ")
+         .replace(/[^a-z0-9\s]/g, "")
+         .split(/\s+/)
+         .filter(w => w.length > 0);
+    targetWords = cleanEn(targetText);
+    spokenWords = cleanEn(spokenText);
+  }
+
+  if (targetWords.length === 0) return 0;
+
+  const spokenSet = new Set(spokenWords);
+  let matched = 0;
+  targetWords.forEach(w => {
+    if (spokenSet.has(w)) matched++;
+  });
+
+  return Math.round((matched / targetWords.length) * 100);
+}
+
+function renderTask(idx) {
+  stopAllAudios();
+
+  const task = taskList[idx];
+  currentSubmissionPayload = null;
+
+  const percent = Math.round(((idx + 1) / taskList.length) * 100);
+  overallTaskLabel.textContent = `タスク ${idx + 1} / ${taskList.length}`;
+  overallPercentage.textContent = `${percent}%`;
+  overallProgressFill.style.width = `${percent}%`;
+
+  taskTitle.textContent = task.name;
+  taskDesc.textContent = task.desc;
+  audioSourceLabel.textContent = `使用音声: audio/${task.audio}`;
+
+  if (task.allowRetry) {
+    retryBadge.textContent = "何度でも録音可";
+    retryBadge.className = "badge badge-can-retry";
+  } else {
+    retryBadge.textContent = "1回のみ（やり直し不可）";
+    retryBadge.className = "badge badge-no-retry";
+  }
+
+  if (task.showScript) {
+    scriptContent.className = "script-text";
+    scriptContent.textContent = task.text;
+  } else {
+    scriptContent.className = "script-text script-hidden";
+    scriptContent.textContent = "（シャドーイング中：文字原稿は非表示です）";
+  }
+
+  indicatorFill.style.width = "0%";
+  indicatorTime.textContent = "00:00 / 00:00";
+
+  modelAudio.src = `audio/${task.audio}`;
+  modelAudio.load();
+  modelAudio.onloadedmetadata = () => {
+    indicatorTime.textContent = `00:00 / ${formatTime(modelAudio.duration)}`;
+    readingTargetDuration = modelAudio.duration || 10;
+  };
+
+  feedbackPanel.style.display = "none";
+  retryBtn.style.display = "none";
+  nextBtn.disabled = true;
+  recordBtn.disabled = false;
+  recordBtn.classList.remove("recording");
+  recordBtnText.textContent = "録音を開始する";
+  statusMessage.textContent = "";
+  syncStatus.textContent = "";
+
+  nextBtn.textContent = (idx === taskList.length - 1) ? "すべての課題を完了する" : "提出して次へ ➔";
+}
+
+modelAudio.ontimeupdate = () => {
+  if (modelAudio.duration > 0) {
+    const cur = modelAudio.currentTime;
+    const dur = modelAudio.duration;
+    indicatorFill.style.width = `${(cur / dur) * 100}%`;
+    indicatorTime.textContent = `${formatTime(cur)} / ${formatTime(dur)}`;
+  }
+};
+
+async function startRecording() {
+  if (!validateStudentId()) {
+    alert("登録されている学籍番号を入力してください。");
+    studentIdInput.focus();
+    return;
+  }
+
+  stopAllAudios();
+
+  const task = taskList[currentTaskIdx];
+  recognizedText = "";
+  interimText = "";
+  syncStatus.textContent = "";
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    
+    audioChunks = [];
+    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) audioChunks.push(e.data);
+    };
+    mediaRecorder.onstop = () => {
+      recordedBlob = new Blob(audioChunks, { type: "audio/webm" });
+      userAudioPreview.src = URL.createObjectURL(recordedBlob);
+    };
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Google Chrome をご利用ください。");
+      return;
+    }
+
+    recognition = new SpeechRecognition();
+    recognition.lang = task.lang || "en-US";
+    recognition.interimResults = true;
+    recognition.continuous = true;
+
+    recognition.onresult = (e) => {
+      let finalSegment = "";
+      interimText = "";
+      for (let i = e.resultIndex; i < e.results.length; ++i) {
+        if (e.results[i].isFinal) {
+          finalSegment += e.results[i][0].transcript + " ";
+        } else {
+          interimText += e.results[i][0].transcript;
+        }
+      }
+      if (finalSegment) recognizedText += finalSegment;
+      statusMessage.textContent = "認識中: " + (recognizedText + interimText).trim();
+    };
+
+    recognition.onerror = (e) => {
+      console.warn("Speech Recognition Error:", e.error);
+    };
+
+    mediaRecorder.start();
+    recognition.start();
+    isRecording = true;
+
+    recordBtn.classList.add("recording");
+    recordBtnText.textContent = "録音を終了する";
+    statusMessage.textContent = "録音中...（声を出して発話してください）";
+
+    if (task.hasAudio) {
+      modelAudio.currentTime = 0;
+      modelAudio.play().catch(err => console.log("再生制限:", err));
+    } else {
+      indicatorFill.style.width = "0%";
+      readingStartTime = Date.now();
+      clearInterval(readingTimer);
+      readingTimer = setInterval(() => {
+        const elapsed = (Date.now() - readingStartTime) / 1000;
+        const progress = Math.min((elapsed / readingTargetDuration) * 100, 100);
+        indicatorFill.style.width = `${progress}%`;
+        indicatorTime.textContent = `${formatTime(elapsed)} / ${formatTime(readingTargetDuration)}`;
+        if (progress >= 100) clearInterval(readingTimer);
+      }, 100);
+    }
+
+  } catch (err) {
+    alert("マイクへのアクセスが許可されていません。");
+    console.error(err);
+  }
+}
+
+function stopRecording() {
+  if (!isRecording) return;
+  isRecording = false;
+
+  if (mediaRecorder && mediaRecorder.state !== "inactive") {
+    mediaRecorder.stop();
+  }
+  if (modelAudio) {
+    modelAudio.pause();
+  }
+  if (readingTimer) {
+    clearInterval(readingTimer);
+  }
+
+  recordBtn.classList.remove("recording");
+  recordBtnText.textContent = "録音処理中...";
+  statusMessage.textContent = "音声認識の確定を待っています...";
+
+  if (recognition) {
+    recognition.stop();
+  }
+
+  setTimeout(() => {
+    finishTaskEvaluation();
+  }, 600);
+}
+
+async function finishTaskEvaluation() {
+  const task = taskList[currentTaskIdx];
+  const fullRecognized = (recognizedText + " " + interimText).trim();
+  recognizedTextDisplay.textContent = fullRecognized || "（音声が認識されませんでした）";
+
+  const recall = calculateWordRecall(task.text, fullRecognized, task.lang);
+  scoreDisplay.textContent = `認識率（単語カバー率）: ${recall}%`;
+
+  const finalFilename = buildFilename(task.filenameTemplate);
+  generatedFilename.textContent = finalFilename;
+
+  feedbackPanel.style.display = "block";
+  statusMessage.textContent = "";
+
+  const base64Audio = await blobToBase64(recordedBlob);
+  currentSubmissionPayload = {
+    studentId: studentIdInput.value.trim().toUpperCase() || "NO_ID",
+    assignmentName: activeAssignment.title,
+    taskName: task.name,
+    recallScore: recall,
+    recognizedText: fullRecognized,
+    filename: finalFilename,
+    audioBase64: base64Audio
+  };
+
+  if (!task.allowRetry) {
+    recordBtn.disabled = true;
+    recordBtnText.textContent = "録音完了（送信確定）";
+    retryBtn.style.display = "none";
+    sendToGoogleDrive(currentSubmissionPayload);
+  } else {
+    recordBtn.disabled = false;
+    recordBtnText.textContent = "もう一度録音する";
+    retryBtn.style.display = "inline-block";
+    nextBtn.disabled = false;
+  }
+}
+
+recordBtn.addEventListener("click", () => {
+  if (!isRecording) {
+    startRecording();
+  } else {
+    stopRecording();
+  }
+});
+
+retryBtn.addEventListener("click", () => {
+  stopAllAudios();
+  feedbackPanel.style.display = "none";
+  syncStatus.textContent = "";
+  startRecording();
+});
+
+nextBtn.addEventListener("click", async () => {
+  const task = taskList[currentTaskIdx];
+
+  stopAllAudios();
+
+  if (task.allowRetry && currentSubmissionPayload) {
+    await sendToGoogleDrive(currentSubmissionPayload);
+  }
+
+  if (currentTaskIdx < taskList.length - 1) {
+    currentTaskIdx++;
+    renderTask(currentTaskIdx);
+  } else {
+    taskArea.style.display = "none";
+    document.getElementById("overallProgressWrapper").style.display = "none";
+    completionCard.style.display = "block";
+  }
+});
+
+validateStudentId();
+renderTask(currentTaskIdx);
+</script>
+
+</body>
+</html>
