@@ -346,6 +346,7 @@
         <input type="text" id="studentId" class="student-id-input" placeholder="例: 01X26000" value="">
       </div>
       <div id="idAuthMsg" class="id-auth-msg"></div>
+      <div id="resumeNotice" style="font-size: 12px; font-weight: 600; color: var(--primary); margin-top: 4px;"></div>
     </div>
   </div>
 
@@ -433,9 +434,10 @@
 
 <script>
 /**
- * 0. 登録受講生（84名）の学籍番号マスターリスト（一括適用済み）
+ * 0. 登録受講生（84名）＋ 動作確認用ID（00A00000）マスターリスト
  */
 const ALLOWED_STUDENT_IDS = [
+  "00A00000", // 動作確認用テストID
   "06A26020", "07A26013", "07A26050", "07A26059", "07A26072", "07A26074", "08A26016", "08A26024",
   "08A26039", "08A26045", "08A26055", "08A26071", "08A26112", "08A26114", "08A26135", "08A26147",
   "08A26149", "08A26150", "08A26156", "08A26171", "08A26176", "08A26201", "08C26003", "08C26005",
@@ -452,7 +454,7 @@ const ALLOWED_STUDENT_IDS = [
 const GAS_ENDPOINT_URL = "https://script.google.com/macros/s/AKfycbwPjHHUjxKb1s6EIR5l9zFC-p7Y0TRUhH1Y777xEcACQmHjJngUW69dm3Q2i22rL1CM/exec";
 
 /**
- * 1. 原稿テキスト辞書（原稿修正済み完全準拠）
+ * 1. 原稿テキスト辞書（修正済み完全準拠）
  */
 const MIC_CHECK_SCRIPT = "この音声を聞きながら画面の文字を読んで、録音してください。音声認識の結果は表示されていますか？自分の声はクリアに聞こえますか？イヤホンとマイクの設定を調整してください。";
 
@@ -696,29 +698,6 @@ const nextBtn = document.getElementById("nextBtn");
 const taskArea = document.getElementById("taskArea");
 const completionCard = document.getElementById("completionCard");
 
-// 学籍番号のリアルタイム検証（大文字小文字対応）
-function validateStudentId() {
-  const enteredId = studentIdInput.value.trim().toUpperCase();
-  if (!enteredId) {
-    studentIdInput.className = "student-id-input invalid";
-    idAuthMsg.textContent = "⚠ 学籍番号を入力してください";
-    idAuthMsg.style.color = "var(--danger)";
-    return false;
-  }
-  if (!ALLOWED_STUDENT_IDS.includes(enteredId)) {
-    studentIdInput.className = "student-id-input invalid";
-    idAuthMsg.textContent = "⚠ 登録簿にない学籍番号です";
-    idAuthMsg.style.color = "var(--danger)";
-    return false;
-  }
-  studentIdInput.className = "student-id-input valid";
-  idAuthMsg.textContent = "✔ 認証済み";
-  idAuthMsg.style.color = "var(--success)";
-  return true;
-}
-
-studentIdInput.addEventListener("input", validateStudentId);
-
 function stopAllAudios() {
   if (modelAudio) {
     modelAudio.pause();
@@ -911,7 +890,7 @@ modelAudio.ontimeupdate = () => {
 };
 
 async function startRecording() {
-  if (!validateStudentId()) {
+  if (!validateStudentIdOnly()) {
     alert("登録されている学籍番号を入力してください。");
     studentIdInput.focus();
     return;
@@ -1095,7 +1074,92 @@ nextBtn.addEventListener("click", async () => {
   }
 });
 
-validateStudentId();
+let lastVerifiedId = "";
+
+function validateStudentIdOnly() {
+  const enteredId = studentIdInput.value.trim().toUpperCase();
+  if (!enteredId) {
+    studentIdInput.className = "student-id-input invalid";
+    idAuthMsg.textContent = "⚠ 学籍番号を入力してください";
+    idAuthMsg.style.color = "var(--danger)";
+    return false;
+  }
+  if (!ALLOWED_STUDENT_IDS.includes(enteredId)) {
+    studentIdInput.className = "student-id-input invalid";
+    idAuthMsg.textContent = "⚠ 登録簿にない学籍番号です";
+    idAuthMsg.style.color = "var(--danger)";
+    return false;
+  }
+  studentIdInput.className = "student-id-input valid";
+  idAuthMsg.textContent = "✔ 認証済み";
+  idAuthMsg.style.color = "var(--success)";
+  return true;
+}
+
+async function checkStudentProgress() {
+  if (!validateStudentIdOnly()) {
+    const resumeNotice = document.getElementById("resumeNotice");
+    if (resumeNotice) resumeNotice.textContent = "";
+    return;
+  }
+
+  const enteredId = studentIdInput.value.trim().toUpperCase();
+  if (enteredId === lastVerifiedId) return;
+  lastVerifiedId = enteredId;
+
+  const resumeNotice = document.getElementById("resumeNotice");
+  if (resumeNotice) resumeNotice.textContent = "⏳ 提出履歴を確認しています...";
+  recordBtn.disabled = true;
+
+  try {
+    const queryUrl = `${GAS_ENDPOINT_URL}?studentId=${encodeURIComponent(enteredId)}&assignmentName=${encodeURIComponent(activeAssignment.title)}`;
+    const res = await fetch(queryUrl);
+    const result = await res.json();
+
+    if (result.status === "success") {
+      const submittedSet = new Set(result.submittedTasks || []);
+
+      // 全17タスク提出済みの場合
+      if (taskList.every(t => submittedSet.has(t.name))) {
+        taskArea.style.display = "none";
+        document.getElementById("overallProgressWrapper").style.display = "none";
+        completionCard.innerHTML = `
+          <h2 style="color: var(--primary); font-size: 24px; margin-bottom: 12px;">【提出完了済み】</h2>
+          <p style="font-size: 15px; color: var(--text-sub); line-height: 1.8;">
+            学籍番号: <strong>${enteredId}</strong><br>
+            この課題（${activeAssignment.title}）はすでにすべてのタスクの提出が完了しています。<br>
+            二重提出防止のため、追加の録音はできません。
+          </p>`;
+        completionCard.style.display = "block";
+        if (resumeNotice) resumeNotice.textContent = "✔ 提出完了済み";
+        return;
+      }
+
+      // 未提出の最初のタスクを探して再開
+      const nextIdx = taskList.findIndex(t => !submittedSet.has(t.name));
+      if (nextIdx > 0) {
+        currentTaskIdx = nextIdx;
+        if (resumeNotice) resumeNotice.textContent = `前回の続き（タスク ${currentTaskIdx + 1}）から再開します`;
+      } else {
+        currentTaskIdx = 0;
+        if (resumeNotice) resumeNotice.textContent = "";
+      }
+      renderTask(currentTaskIdx);
+    } else {
+      if (resumeNotice) resumeNotice.textContent = "";
+      recordBtn.disabled = false;
+    }
+  } catch (err) {
+    console.warn("進捗確認通信エラー:", err);
+    if (resumeNotice) resumeNotice.textContent = "";
+    recordBtn.disabled = false;
+  }
+}
+
+studentIdInput.addEventListener("input", validateStudentIdOnly);
+studentIdInput.addEventListener("change", checkStudentProgress);
+studentIdInput.addEventListener("blur", checkStudentProgress);
+
 renderTask(currentTaskIdx);
 </script>
 
