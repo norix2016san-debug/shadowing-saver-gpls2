@@ -401,8 +401,11 @@
     <div class="feedback-panel" id="feedbackPanel">
       <div class="score-banner" id="scoreDisplay">認識率（単語カバー率）: 0%</div>
       
-      <p style="font-size: 13px; color: var(--text-sub); margin-bottom: 4px;">【Check your voice】あなたの録音音声：</p>
-      <audio id="userAudioPreview" controls style="width: 100%; margin-bottom: 12px;"></audio>
+      <p style="font-size: 13px; color: var(--text-sub); margin-bottom: 4px;">【Check your voice】あなたの録音音声（自動再生中）：</p>
+      <audio id="userAudioPreview" controls style="width: 100%; margin-bottom: 8px;"></audio>
+      <div id="previewControlArea" style="text-align: right; margin-bottom: 14px;">
+        <button id="stopPreviewBtn" class="btn" style="display: none; background: #e8f0fe; color: var(--primary); font-weight: 700; border: 1px solid var(--primary); padding: 8px 18px; border-radius: 20px;">⏹ 再生を停止して確認完了</button>
+      </div>
 
       <div style="font-size: 13px; margin-bottom: 6px;">
         <strong>認識された発話テキスト:</strong>
@@ -744,7 +747,7 @@ let readingTimer = null;
 let readingStartTime = 0;
 let readingTargetDuration = 10;
 
-// Web Audio API によるモノラル強制合成（問題1の解決）
+// Web Audio API によるモノラル強制合成
 let audioCtx = null;
 let audioSourceNode = null;
 
@@ -807,6 +810,7 @@ const syncStatus = document.getElementById("syncStatus");
 const feedbackPanel = document.getElementById("feedbackPanel");
 const scoreDisplay = document.getElementById("scoreDisplay");
 const userAudioPreview = document.getElementById("userAudioPreview");
+const stopPreviewBtn = document.getElementById("stopPreviewBtn");
 const recognizedTextDisplay = document.getElementById("recognizedTextDisplay");
 const generatedFilename = document.getElementById("generatedFilename");
 
@@ -827,8 +831,13 @@ function stopAllAudios() {
   if (userAudioPreview) {
     userAudioPreview.pause();
     userAudioPreview.currentTime = 0;
+    userAudioPreview.onended = null;
     userAudioPreview.removeAttribute("src");
     userAudioPreview.load();
+  }
+  if (stopPreviewBtn) {
+    stopPreviewBtn.style.display = "none";
+    stopPreviewBtn.onclick = null;
   }
   if (readingTimer) {
     clearInterval(readingTimer);
@@ -991,7 +1000,6 @@ function renderTask(idx) {
     readingTargetDuration = modelAudio.duration || 10;
   };
 
-  // モデル音声終了時の自動停止（+2秒）（問題2の解決）
   modelAudio.onended = () => {
     if (isRecording && activeRecordingTaskId === currentTaskIdx) {
       statusMessage.textContent = "モデル音声が終了しました。約2秒後に自動で録音を停止します...";
@@ -1011,6 +1019,9 @@ function renderTask(idx) {
   recordBtnText.textContent = "録音を開始する";
   statusMessage.textContent = "";
   syncStatus.textContent = "";
+  if (stopPreviewBtn) {
+    stopPreviewBtn.style.display = "none";
+  }
 
   nextBtn.textContent = (idx === taskList.length - 1) ? "すべての課題を完了する" : "提出して次へ ➔";
 }
@@ -1188,7 +1199,9 @@ async function finishTaskEvaluation(evalTaskId) {
   generatedFilename.textContent = finalFilename;
 
   feedbackPanel.style.display = "block";
-  statusMessage.textContent = "";
+  recordBtn.disabled = true;
+  retryBtn.style.display = "none";
+  nextBtn.disabled = true;
 
   const base64Audio = recordedBlob ? await blobToBase64(recordedBlob) : "";
   currentSubmissionPayload = {
@@ -1201,19 +1214,73 @@ async function finishTaskEvaluation(evalTaskId) {
     audioBase64: base64Audio
   };
 
-  if (!task.allowRetry) {
-    recordBtn.disabled = true;
-    recordBtnText.textContent = "録音完了（送信確定）";
-    retryBtn.style.display = "none";
-    nextBtn.disabled = true;
-    await sendToGoogleDrive(currentSubmissionPayload);
-    nextBtn.disabled = false;
-  } else {
-    recordBtn.disabled = false;
-    recordBtnText.textContent = "もう一度録音する";
-    retryBtn.style.display = "inline-block";
-    nextBtn.disabled = false;
+  // プレビュー停止ボタンと案内の設定
+  if (stopPreviewBtn) {
+    stopPreviewBtn.style.display = "inline-block";
+    if (!task.allowRetry) {
+      stopPreviewBtn.textContent = "⏹ 再生を停止して提出する";
+      statusMessage.textContent = "🎧 録音音声を確認中...（再生終了または「停止」を押すと提出されます）";
+    } else {
+      stopPreviewBtn.textContent = "⏹ 再生を停止して確認完了";
+      statusMessage.textContent = "🎧 録音音声を確認中...（再生終了または「停止」を押すと次を選べます）";
+    }
   }
+
+  let previewProcessed = false;
+  const onPreviewFinish = async () => {
+    if (previewProcessed || evalTaskId !== currentTaskIdx) return;
+    previewProcessed = true;
+
+    if (userAudioPreview) {
+      userAudioPreview.pause();
+      userAudioPreview.onended = null;
+    }
+    if (stopPreviewBtn) {
+      stopPreviewBtn.style.display = "none";
+      stopPreviewBtn.onclick = null;
+    }
+
+    if (!task.allowRetry) {
+      recordBtnText.textContent = "録音完了（送信確定）";
+      statusMessage.textContent = "認識結果と音声を提出中...";
+      const success = await sendToGoogleDrive(currentSubmissionPayload);
+      if (success) {
+        statusMessage.textContent = "✔ 提出完了！次のページへ進みます...";
+        setTimeout(() => {
+          if (currentTaskIdx < taskList.length - 1) {
+            currentTaskIdx++;
+            renderTask(currentTaskIdx);
+          } else {
+            taskArea.style.display = "none";
+            document.getElementById("overallProgressWrapper").style.display = "none";
+            completionCard.style.display = "block";
+          }
+        }, 1000);
+      } else {
+        statusMessage.textContent = "⚠ 提出に失敗しました。「提出して次へ」を押して再試行してください。";
+        nextBtn.disabled = false;
+      }
+    } else {
+      statusMessage.textContent = "音声確認が完了しました。「もう一度録音する」か「提出して次へ」を選択してください。";
+      recordBtn.disabled = false;
+      recordBtnText.textContent = "もう一度録音する";
+      retryBtn.style.display = "inline-block";
+      retryBtn.disabled = false;
+      nextBtn.disabled = false;
+    }
+  };
+
+  userAudioPreview.onended = onPreviewFinish;
+  if (stopPreviewBtn) {
+    stopPreviewBtn.onclick = onPreviewFinish;
+  }
+
+  // 録音音声の自動再生開始
+  userAudioPreview.currentTime = 0;
+  userAudioPreview.play().catch(err => {
+    console.warn("自動再生制限またはエラー:", err);
+    statusMessage.textContent = "▶ 音声を再生して確認するか、「確認完了」ボタンを押してください。";
+  });
 }
 
 recordBtn.addEventListener("click", () => {
