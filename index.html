@@ -530,7 +530,7 @@ const ALLOWED_STUDENT_IDS = [
 const GAS_ENDPOINT_URL = "https://script.google.com/macros/s/AKfycbwPjHHUjxKb1s6EIR5l9zFC-p7Y0TRUhH1Y777xEcACQmHjJngUW69dm3Q2i22rL1CM/exec";
 
 /**
- * 1. 原稿テキスト辞書（原稿修正済み完全準拠）
+ * 1. 原稿テキスト辞書
  */
 const MIC_CHECK_SCRIPT = "この音声を聞きながら画面の文字を読んで、録音してください。音声認識の結果は表示されていますか？自分の声はクリアに聞こえますか？イヤホンとマイクの設定を調整してください。";
 
@@ -1014,6 +1014,9 @@ function renderTask(idx) {
   feedbackPanel.style.display = "none";
   retryBtn.style.display = "none";
   nextBtn.disabled = true;
+
+  // ★次タスク遷移時に必ず録音ボタンを再表示・有効化
+  recordBtn.style.display = "";
   recordBtn.disabled = false;
   recordBtn.classList.remove("recording");
   recordBtnText.textContent = "録音を開始する";
@@ -1089,13 +1092,24 @@ async function startRecording() {
       console.warn("Speech Recognition Error:", e.error);
     };
 
+    // ★無音等でブラウザ側が認識を切断しても録音中なら自動再接続（途切れ防止）
+    recognition.onend = () => {
+      if (isRecording && activeRecordingTaskId === currentTaskIdx) {
+        try {
+          recognition.start();
+        } catch (err) {
+          console.warn("Speech Recognition restart:", err);
+        }
+      }
+    };
+
     mediaRecorder.start();
     recognition.start();
     isRecording = true;
     recordingStartTime = Date.now();
 
- if (!task.allowRetry) {
-      // 1回限りのタスク：録音停止ボタン・アイコンを隠して誤停止を防止
+    if (!task.allowRetry) {
+      // 1回限りのタスク：誤停止防止のためボタンを隠す
       recordBtn.style.display = "none";
       statusMessage.textContent = "🎙️ 録音中...（モデル音声の終了後に自動で停止します）";
     } else {
@@ -1183,252 +1197,4 @@ function stopRecording() {
   });
 
   Promise.all([recorderStopped, recognitionStopped]).then(() => {
-    if (targetTaskId !== currentTaskIdx) {
-      console.warn("タスク不一致のため録音データを安全に破棄しました");
-      return;
-    }
-    finishTaskEvaluation(targetTaskId);
-  });
-}
-
-async function finishTaskEvaluation(evalTaskId) {
-  if (evalTaskId !== currentTaskIdx) return;
-  const task = taskList[currentTaskIdx];
-
-  const fullRecognized = (recognizedText + " " + interimText).trim();
-  recognizedTextDisplay.textContent = fullRecognized || "（音声が認識されませんでした）";
-
-  const recall = calculateWordRecall(task.text, fullRecognized, task.lang);
-  scoreDisplay.textContent = `認識率（単語カバー率）: ${recall}%`;
-
-  const finalFilename = buildFilename(task.filenameTemplate);
-  generatedFilename.textContent = finalFilename;
-
-  feedbackPanel.style.display = "block";
-  recordBtn.disabled = true;
-  retryBtn.style.display = "none";
-  nextBtn.disabled = true;
-
-  const base64Audio = recordedBlob ? await blobToBase64(recordedBlob) : "";
-  currentSubmissionPayload = {
-    studentId: studentIdInput.value.trim().toUpperCase() || "NO_ID",
-    assignmentName: activeAssignment.title,
-    taskName: task.name,
-    recallScore: recall,
-    recognizedText: fullRecognized,
-    filename: finalFilename,
-    audioBase64: base64Audio
-  };
-
-  // プレビュー停止ボタンと案内の設定
-  if (stopPreviewBtn) {
-    stopPreviewBtn.style.display = "inline-block";
-    if (!task.allowRetry) {
-      stopPreviewBtn.textContent = "⏹ 再生を停止して提出する";
-      statusMessage.textContent = "🎧 録音音声を確認中...（再生終了または「停止」を押すと提出されます）";
-    } else {
-      stopPreviewBtn.textContent = "⏹ 再生を停止して確認完了";
-      statusMessage.textContent = "🎧 録音音声を確認中...（再生終了または「停止」を押すと次を選べます）";
-    }
-  }
-
-  let previewProcessed = false;
-  const onPreviewFinish = async () => {
-    if (previewProcessed || evalTaskId !== currentTaskIdx) return;
-    previewProcessed = true;
-
-    if (userAudioPreview) {
-      userAudioPreview.pause();
-      userAudioPreview.onended = null;
-    }
-    if (stopPreviewBtn) {
-      stopPreviewBtn.style.display = "none";
-      stopPreviewBtn.onclick = null;
-    }
-
-    if (!task.allowRetry) {
-      recordBtnText.textContent = "録音完了（送信確定）";
-      statusMessage.textContent = "認識結果と音声を提出中...";
-      const success = await sendToGoogleDrive(currentSubmissionPayload);
-      if (success) {
-        statusMessage.textContent = "✔ 提出完了！次のページへ進みます...";
-        setTimeout(() => {
-          if (currentTaskIdx < taskList.length - 1) {
-            currentTaskIdx++;
-            renderTask(currentTaskIdx);
-          } else {
-            taskArea.style.display = "none";
-            document.getElementById("overallProgressWrapper").style.display = "none";
-            completionCard.style.display = "block";
-          }
-        }, 1000);
-      } else {
-        statusMessage.textContent = "⚠ 提出に失敗しました。「提出して次へ」を押して再試行してください。";
-        nextBtn.disabled = false;
-      }
-    } else {
-      statusMessage.textContent = "音声確認が完了しました。「もう一度録音する」か「提出して次へ」を選択してください。";
-      recordBtn.disabled = false;
-      recordBtnText.textContent = "もう一度録音する";
-      retryBtn.style.display = "inline-block";
-      retryBtn.disabled = false;
-      nextBtn.disabled = false;
-    }
-  };
-
-  userAudioPreview.onended = onPreviewFinish;
-  if (stopPreviewBtn) {
-    stopPreviewBtn.onclick = onPreviewFinish;
-  }
-
-  // 録音音声の自動再生開始
-  userAudioPreview.currentTime = 0;
-  userAudioPreview.play().catch(err => {
-    console.warn("自動再生制限またはエラー:", err);
-    statusMessage.textContent = "▶ 音声を再生して確認するか、「確認完了」ボタンを押してください。";
-  });
-}
-
-recordBtn.addEventListener("click", () => {
-  if (!isRecording) {
-    startRecording();
-  } else {
-    const elapsed = (Date.now() - recordingStartTime) / 1000;
-    if (elapsed < 3.0) {
-      statusMessage.textContent = "⚠ 誤タップ防止のため、開始後3秒間は停止できません。";
-      return;
-    }
-    stopRecording();
-  }
-});
-
-retryBtn.addEventListener("click", () => {
-  stopAllAudios();
-  feedbackPanel.style.display = "none";
-  syncStatus.textContent = "";
-  currentSubmissionPayload = null;
-  startRecording();
-});
-
-nextBtn.addEventListener("click", async () => {
-  if (isTransitioning) return;
-  isTransitioning = true;
-  nextBtn.disabled = true;
-  retryBtn.disabled = true;
-
-  stopAllAudios();
-
-  const task = taskList[currentTaskIdx];
-
-  if (task.allowRetry && currentSubmissionPayload) {
-    await sendToGoogleDrive(currentSubmissionPayload);
-  }
-
-  currentSubmissionPayload = null;
-  recordedBlob = null;
-  audioChunks = [];
-  recognizedText = "";
-  interimText = "";
-  activeRecordingTaskId = null;
-
-  if (currentTaskIdx < taskList.length - 1) {
-    currentTaskIdx++;
-    renderTask(currentTaskIdx);
-  } else {
-    taskArea.style.display = "none";
-    document.getElementById("overallProgressWrapper").style.display = "none";
-    completionCard.style.display = "block";
-  }
-
-  isTransitioning = false;
-});
-
-let lastVerifiedId = "";
-
-function validateStudentIdOnly() {
-  const enteredId = studentIdInput.value.trim().toUpperCase();
-  if (!enteredId) {
-    studentIdInput.className = "student-id-input invalid";
-    idAuthMsg.textContent = "⚠ 学籍番号を入力してください";
-    idAuthMsg.style.color = "var(--danger)";
-    return false;
-  }
-  if (!ALLOWED_STUDENT_IDS.includes(enteredId)) {
-    studentIdInput.className = "student-id-input invalid";
-    idAuthMsg.textContent = "⚠ 登録簿にない学籍番号です";
-    idAuthMsg.style.color = "var(--danger)";
-    return false;
-  }
-  studentIdInput.className = "student-id-input valid";
-  idAuthMsg.textContent = "✔ 認証済み";
-  idAuthMsg.style.color = "var(--success)";
-  return true;
-}
-
-async function checkStudentProgress() {
-  if (!validateStudentIdOnly()) {
-    const resumeNotice = document.getElementById("resumeNotice");
-    if (resumeNotice) resumeNotice.textContent = "";
-    return;
-  }
-
-  const enteredId = studentIdInput.value.trim().toUpperCase();
-  if (enteredId === lastVerifiedId) return;
-  lastVerifiedId = enteredId;
-
-  const resumeNotice = document.getElementById("resumeNotice");
-  if (resumeNotice) resumeNotice.textContent = "⏳ 提出履歴を確認しています...";
-  recordBtn.disabled = true;
-
-  try {
-    const queryUrl = `${GAS_ENDPOINT_URL}?studentId=${encodeURIComponent(enteredId)}&assignmentName=${encodeURIComponent(activeAssignment.title)}`;
-    const res = await fetch(queryUrl);
-    const result = await res.json();
-
-    if (result.status === "success") {
-      const submittedSet = new Set(result.submittedTasks || []);
-
-      if (taskList.every(t => submittedSet.has(t.name))) {
-        taskArea.style.display = "none";
-        document.getElementById("overallProgressWrapper").style.display = "none";
-        completionCard.innerHTML = `
-          <h2 style="color: var(--primary); font-size: 24px; margin-bottom: 12px;">【提出完了済み】</h2>
-          <p style="font-size: 15px; color: var(--text-sub); line-height: 1.8;">
-            学籍番号: <strong>${enteredId}</strong><br>
-            この課題（${activeAssignment.title}）はすでにすべてのタスクの提出が完了しています。<br>
-            二重提出防止のため、追加の録音はできません。
-          </p>`;
-        completionCard.style.display = "block";
-        if (resumeNotice) resumeNotice.textContent = "✔ 提出完了済み";
-        return;
-      }
-
-      const nextIdx = taskList.findIndex(t => !submittedSet.has(t.name));
-      if (nextIdx > 0) {
-        currentTaskIdx = nextIdx;
-        if (resumeNotice) resumeNotice.textContent = `前回の続き（タスク ${currentTaskIdx + 1}）から再開します`;
-      } else {
-        currentTaskIdx = 0;
-        if (resumeNotice) resumeNotice.textContent = "";
-      }
-      renderTask(currentTaskIdx);
-    } else {
-      if (resumeNotice) resumeNotice.textContent = "";
-      recordBtn.disabled = false;
-    }
-  } catch (err) {
-    console.warn("進捗確認通信エラー:", err);
-    if (resumeNotice) resumeNotice.textContent = "";
-    recordBtn.disabled = false;
-  }
-}
-
-studentIdInput.addEventListener("input", validateStudentIdOnly);
-studentIdInput.addEventListener("change", checkStudentProgress);
-studentIdInput.addEventListener("blur", checkStudentProgress);
-
-renderTask(currentTaskIdx);
-</script>
-
-</body>
-</html>
+    if (
