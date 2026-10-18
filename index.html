@@ -875,7 +875,7 @@ function blobToBase64(blob) {
 
 async function sendToGoogleDrive(payload) {
   syncStatus.className = "sync-status sync-uploading";
-  syncStatus.textContent = "⏳ Google Driveへ保存中...";
+  syncStatus.textContent = "⏳ 認識結果と音声を提出中...";
   nextBtn.disabled = true;
 
   try {
@@ -887,13 +887,13 @@ async function sendToGoogleDrive(payload) {
     });
 
     syncStatus.className = "sync-status sync-success";
-    syncStatus.textContent = "✔ Google Drive / シートに保存完了";
+    syncStatus.textContent = "✔ 提出完了";
     nextBtn.disabled = false;
     return true;
   } catch (err) {
     console.error("送信エラー:", err);
     syncStatus.className = "sync-status sync-error";
-    syncStatus.textContent = "⚠ 保存通信エラー（再試行してください）";
+    syncStatus.textContent = "⚠ 提出通信エラー（再試行してください）";
     nextBtn.disabled = false;
     return false;
   }
