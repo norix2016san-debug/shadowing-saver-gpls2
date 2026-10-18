@@ -1094,9 +1094,15 @@ async function startRecording() {
     isRecording = true;
     recordingStartTime = Date.now();
 
-    recordBtn.classList.add("recording");
-    recordBtnText.textContent = task.hasAudio ? "録音中（音声終了後、自動停止）" : "録音を終了する";
-    statusMessage.textContent = "録音中...（声を出して発話してください）";
+ if (!task.allowRetry) {
+      // 1回限りのタスク：録音停止ボタン・アイコンを隠して誤停止を防止
+      recordBtn.style.display = "none";
+      statusMessage.textContent = "🎙️ 録音中...（モデル音声の終了後に自動で停止します）";
+    } else {
+      recordBtn.classList.add("recording");
+      recordBtnText.textContent = task.hasAudio ? "録音中（音声終了後、自動停止）" : "録音を終了する";
+      statusMessage.textContent = "録音中...（声を出して発話してください）";
+    }
 
     if (task.hasAudio) {
       modelAudio.currentTime = 0;
