@@ -1344,7 +1344,7 @@ nextBtn.addEventListener("click", async () => {
   interimText = "";
   activeRecordingTaskId = null;
 
-  if (currentTaskIdx < taskList.length - 1) {
+if (currentTaskIdx < taskList.length - 1) {
     currentTaskIdx++;
     renderTask(currentTaskIdx);
   } else {
@@ -1353,7 +1353,10 @@ nextBtn.addEventListener("click", async () => {
     completionCard.style.display = "block";
   }
 
-  isTransitioning = false;
+  // ★1秒間のクールダウン（連打・ダブルクリックによるタスク飛ばしを完全防止）
+  setTimeout(() => {
+    isTransitioning = false;
+  }, 1000);
 });
 
 let lastVerifiedId = "";
